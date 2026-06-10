@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
-const {pdfDocument} = require('pdf-lib');
+const { PDFDocument } = require('pdf-lib');
 const Signature = require('../models/Signature');
 const Document = require('../models/Document');
 const AuditLog = require('../models/AuditLog');
@@ -29,18 +29,29 @@ router.get('/:id',async(req,res)=>{
 
 router.post('/finalize',async(req,res)=>{
     try{
-        const {documentId,signatureImageBase64} = req.body;
+        const {documentId,userId,signatureImageBase64,x,y,page,width,height} = req.body;
+        if(!signatureImageBase64){
+            return res.status(400).json({ message: 'No signature image found' });
+        }
+
         const docRecord = await Document.findById(documentId);
         if(!docRecord){
             return res.status(404).json({message: 'Document missing'});
         }
 
-        const existingSigData = await Signature.findOne({documentId});
-        if(!existingSigData){
-            return res.status(400).json({ message: 'No coordinate mappings found' });
-        }
+        const existingSigData = await Signature.findOneAndUpdate(
+            {documentId},
+            {
+                userId: userId || undefined,
+                x: Math.round(Number(x) || 0),
+                y: Math.round(Number(y) || 0),
+                page: Math.max(1, Number(page) || 1)
+            },
+            {new: true, upsert: true, setDefaultsOnInsert: true}
+        );
 
-        const pdfPath = path.join(__dirname, '..', docRecord.filePath);
+        const storedPath = docRecord.filePath || docRecord.filepath;
+        const pdfPath = path.join(__dirname, '..', storedPath);
         const existingPdfBytes = fs.readFileSync(pdfPath);
 
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
@@ -55,8 +66,8 @@ router.post('/finalize',async(req,res)=>{
         targetPage.drawImage(embeddedImage, {
             x: existingSigData.x,
             y: existingSigData.y,
-            width: 150,
-            height: 50,
+            width: Math.max(30, Math.round(Number(width) || 150)),
+            height: Math.max(15, Math.round(Number(height) || 50)),
         });
 
         const modifiedPdfBytes = await pdfDoc.save();

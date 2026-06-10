@@ -13,15 +13,16 @@ const auditRoutes = require('./routes/audit');
 
 const PORT = process.env.PORT || 8080;
 const app = express();
+const uploadsDir = path.join(__dirname, 'uploads');
 
 connectDb();
 
 app.use(cors());
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(uploadsDir));
 
-if(!fs.existsSync('./uploads')){
-    fs.mkdirSync('./uploads');
+if(!fs.existsSync(uploadsDir)){
+    fs.mkdirSync(uploadsDir);
 }
 
 app.use('/api/auth', authRoutes);

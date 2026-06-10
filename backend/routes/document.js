@@ -1,11 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
+const path = require('path');
 const Document = require('../models/Document');
 const AuditLog = require('../models/AuditLog');
 
 const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
+    destination: (req, file, cb) => cb(null, path.join(__dirname, '..', 'uploads')),
     filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
 });
 const upload = multer({ storage });
@@ -18,7 +19,7 @@ router.post('/upload',upload.single('pdf'),async(req,res)=>{
 
         const newDoc = new Document({
             filename: req.file.filename,
-            filepath: '/uploads/' + req.file.filename,
+            filePath: '/uploads/' + req.file.filename,
             owner: req.body.userId || null
         })
         await newDoc.save();
