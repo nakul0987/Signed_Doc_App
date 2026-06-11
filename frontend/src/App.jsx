@@ -2,6 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import { Rnd } from 'react-rnd';
 
+// --- PRODUCTION API URL CONFIGURATION ---
+const API_BASE_URL = process.env.NODE_ENV === 'production'
+  ? 'https://your-backend-app-name.onrender.com' // 👈 Replace this string with your real Render/Railway backend URL later!
+  : 'http://localhost:8080';
+
 function App() {
   // Auth State
   const [token, setToken] = useState(localStorage.getItem('token') || '');
@@ -59,7 +64,7 @@ function App() {
     e.preventDefault();
     const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
     try {
-      const res = await fetch(`http://localhost:8080${endpoint}`, {
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(authForm)
@@ -87,7 +92,7 @@ function App() {
 
   const fetchDocuments = async () => {
     try {
-      const res = await fetch('http://localhost:8080/api/docs');
+      const res = await fetch(`${API_BASE_URL}/api/docs`);
       const data = await res.json();
       setDocuments(data);
     } catch (err) {
@@ -105,7 +110,7 @@ function App() {
 
     try {
       setUploadStatus('Uploading document...');
-      const res = await fetch('http://localhost:8080/api/docs/upload', {
+      const res = await fetch(`${API_BASE_URL}/api/docs/upload`, {
         method: 'POST',
         body: formData
       });
@@ -122,7 +127,7 @@ function App() {
   const saveCoordinates = async () => {
     if (!selectedDoc) return alert('Please select a working document from the queue.');
     try {
-      const res = await fetch('http://localhost:8080/api/signatures', {
+      const res = await fetch(`${API_BASE_URL}/api/signatures`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -150,7 +155,7 @@ function App() {
 
     try {
       setFinalizeStatus('Embedding layers into PDF...');
-      const res = await fetch('http://localhost:8080/api/signatures/finalize', {
+      const res = await fetch(`${API_BASE_URL}/api/signatures/finalize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -318,9 +323,9 @@ function App() {
           {selectedDoc ? (
             <div id="pdf-container-viewport" style={{ position: 'relative', width: '600px', height: '800px', background: '#fff', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
               
-              {/* Native Fallback PDF Embed Layer */}
+              {/* Dynamic Fallback PDF Embed Layer tracking the API base configuration */}
               <embed 
-                src={`http://localhost:8080${selectedDoc.filePath}#page=${coords.page}&toolbar=0&navpanes=0`} 
+                src={`${API_BASE_URL}${selectedDoc.filePath}#page=${coords.page}&toolbar=0&navpanes=0`} 
                 type="application/pdf" 
                 width="100%" 
                 height="100%" 
